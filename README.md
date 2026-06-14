@@ -4,7 +4,7 @@
 
 Every FX analysis flows through **three sequential levels**. No level concludes alone: each one confirms, contradicts, or adds nuance to the previous. The framework forces the question retail analysis skips — not *what* the trade is, but *how* the macro transmits into price, *when* the effect exhausts, and *what specifically* would break the thesis.
 
-**[→ Open the interactive pipeline map](https://USERNAME.github.io/macro-fx-pipeline/)** *(GitHub Pages)*
+**[→ Open the interactive pipeline map](https://akirraUa.github.io/macro-fx-pipeline/)** *(GitHub Pages)*
 
 ---
 
@@ -118,7 +118,7 @@ Counterintuitive result: a structural **USD-bullish / EUR-bearish** thesis can b
 This is a Claude Agent Skill — a folder containing a `SKILL.md` plus reference files that Claude loads on demand.
 
 ```bash
-git clone https://github.com/USERNAME/macro-fx-pipeline.git
+git clone https://github.com/akirraUa/macro-fx-pipeline.git
 ```
 
 Then place the `macro-fx-pipeline/` folder into the skills directory your Claude setup reads (e.g. your Claude Code / Agent skills path). Claude triggers it automatically whenever you ask to analyze a pair, read a COT report, or evaluate a macro thesis — no manual invocation needed.
