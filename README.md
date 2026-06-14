@@ -1,4 +1,4 @@
-# Macro FX Pipeline
+# Macro AI Agent for Claude
 
 > A structured, institutional-grade analysis framework for macro-driven FX trading — packaged as a [Claude Agent Skill](https://docs.claude.com).
 
