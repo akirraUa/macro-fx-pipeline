@@ -4,7 +4,6 @@
 
 Every FX analysis flows through **three sequential levels**. No level concludes alone: each one confirms, contradicts, or adds nuance to the previous. The framework forces the question retail analysis skips — not *what* the trade is, but *how* the macro transmits into price, *when* the effect exhausts, and *what specifically* would break the thesis.
 
-**[→ Open the interactive pipeline map](https://akirraUa.github.io/macro-fx-pipeline/)** *(GitHub Pages)*
 
 ---
 
