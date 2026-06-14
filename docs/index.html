@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Macro FX Pipeline — Interactive Map</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0a0a; --bg-2:#111110; --panel:#151513; --panel-2:#1a1a17;
+    --line:#272622; --line-2:#33312b;
+    --gold:#C8A96E; --gold-dim:#8f7c52; --gold-glow:rgba(200,169,110,.14);
+    --txt:#e9e4d8; --txt-2:#9b958686; --muted:#8c867a;
+    --mono:'DM Mono',monospace; --disp:'Syne',sans-serif; --body:'Inter',sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    background:var(--bg); color:var(--txt); font-family:var(--body);
+    line-height:1.55; -webkit-font-smoothing:antialiased;
+    background-image:radial-gradient(circle at 20% -10%, rgba(200,169,110,.05), transparent 40%);
+  }
+  .wrap{max-width:1180px; margin:0 auto; padding:0 28px}
+
+  /* ---------- header ---------- */
+  header{padding:90px 0 48px; border-bottom:1px solid var(--line)}
+  .eyebrow{font-family:var(--mono); font-size:12px; letter-spacing:.32em; text-transform:uppercase; color:var(--gold-dim); margin-bottom:22px}
+  h1{font-family:var(--disp); font-weight:800; font-size:clamp(38px,6vw,72px); line-height:.98; letter-spacing:-.02em}
+  h1 .g{color:var(--gold)}
+  .lede{max-width:660px; margin-top:24px; color:var(--muted); font-size:17px}
+  .lede b{color:var(--txt); font-weight:600}
+
+  /* ---------- section ---------- */
+  section{padding:64px 0; border-bottom:1px solid var(--line)}
+  .sec-head{display:flex; align-items:baseline; gap:16px; margin-bottom:8px}
+  .sec-num{font-family:var(--mono); color:var(--gold-dim); font-size:13px}
+  .sec-title{font-family:var(--disp); font-weight:700; font-size:clamp(22px,3vw,30px); letter-spacing:-.01em}
+  .sec-sub{color:var(--muted); font-size:15px; max-width:620px; margin-bottom:38px}
+
+  /* ---------- pipeline ---------- */
+  .pipe{display:grid; grid-template-columns:1fr 1fr 1fr; gap:18px; position:relative}
+  @media(max-width:820px){.pipe{grid-template-columns:1fr}}
+  .lvl{
+    background:var(--panel); border:1px solid var(--line); border-radius:4px;
+    padding:22px 20px 20px; cursor:pointer; position:relative; transition:.22s ease;
+    overflow:hidden;
+  }
+  .lvl::before{content:''; position:absolute; inset:0 auto 0 0; width:2px; background:var(--gold); transform:scaleY(0); transform-origin:top; transition:.25s ease}
+  .lvl:hover{border-color:var(--line-2); background:var(--panel-2); transform:translateY(-3px)}
+  .lvl.open{border-color:var(--gold); background:var(--panel-2)}
+  .lvl.open::before{transform:scaleY(1)}
+  .lvl-tag{font-family:var(--mono); font-size:11px; letter-spacing:.18em; color:var(--gold-dim); text-transform:uppercase}
+  .lvl-name{font-family:var(--disp); font-weight:700; font-size:21px; margin:8px 0 6px}
+  .lvl-horizon{font-family:var(--mono); font-size:11px; color:var(--muted)}
+  .lvl-out{margin-top:14px; padding-top:14px; border-top:1px dashed var(--line-2); font-size:13px; color:var(--muted)}
+  .lvl-out b{color:var(--gold); font-weight:500; font-family:var(--mono); font-size:12px}
+  .steps{max-height:0; opacity:0; overflow:hidden; transition:.3s ease; margin-top:0}
+  .lvl.open .steps{max-height:520px; opacity:1; margin-top:16px}
+  .step{display:flex; gap:11px; padding:9px 0; border-top:1px solid var(--line); font-size:13.5px}
+  .step:first-child{border-top:none}
+  .step .n{font-family:var(--mono); color:var(--gold); font-size:12px; flex-shrink:0; width:16px}
+  .step .t{color:var(--txt)}
+  .step .t span{color:var(--muted); display:block; font-size:12px; margin-top:2px}
+  .hint{font-family:var(--mono); font-size:11px; color:var(--gold-dim); margin-top:14px; opacity:.8}
+  .lvl.open .hint{display:none}
+
+  .flow{display:flex; justify-content:center; gap:14px; margin:24px 0 4px; font-family:var(--mono); font-size:12px; color:var(--muted); flex-wrap:wrap}
+  .flow span{color:var(--gold-dim)}
+  .arrow{color:var(--gold)}
+
+  /* ---------- decision tree ---------- */
+  .tree{background:var(--panel); border:1px solid var(--line); border-radius:4px; padding:30px; margin-top:8px}
+  .node{padding:14px 18px; border:1px solid var(--line-2); border-radius:3px; background:var(--bg-2); font-size:14px; max-width:540px}
+  .node.start{border-color:var(--gold); color:var(--gold); font-family:var(--mono); font-size:13px; letter-spacing:.04em}
+  .q{font-family:var(--mono); font-size:12px; color:var(--gold-dim); letter-spacing:.06em; text-transform:uppercase; margin:22px 0 12px}
+  .branches{display:flex; gap:14px; flex-wrap:wrap}
+  .branch{flex:1; min-width:230px; border:1px solid var(--line); border-radius:3px; padding:16px; cursor:pointer; transition:.2s; background:var(--bg-2)}
+  .branch:hover{border-color:var(--line-2)}
+  .branch.active{border-color:var(--gold); background:var(--panel-2)}
+  .branch .lab{font-family:var(--mono); font-size:12px; color:var(--gold); margin-bottom:8px}
+  .branch .desc{font-size:13px; color:var(--muted)}
+  .outcome{margin-top:18px; min-height:74px; border-left:2px solid var(--gold); padding:4px 0 4px 18px; opacity:0; transition:.25s}
+  .outcome.show{opacity:1}
+  .outcome .o-tag{font-family:var(--mono); font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--gold-dim)}
+  .outcome .o-txt{font-size:15px; margin-top:6px; color:var(--txt)}
+  .outcome .o-txt b{color:var(--gold); font-weight:600}
+
+  /* ---------- mandate toggle ---------- */
+  .asym{background:var(--panel); border:1px solid var(--line); border-radius:4px; padding:30px; margin-top:8px}
+  .toggle{display:inline-flex; border:1px solid var(--line-2); border-radius:3px; overflow:hidden; margin-bottom:28px}
+  .toggle button{font-family:var(--mono); font-size:13px; letter-spacing:.04em; background:transparent; color:var(--muted); border:none; padding:11px 22px; cursor:pointer; transition:.18s}
+  .toggle button.on{background:var(--gold); color:#0a0a0a; font-weight:500}
+  .banks{display:grid; grid-template-columns:1fr 1fr; gap:16px}
+  @media(max-width:680px){.banks{grid-template-columns:1fr}}
+  .bank{border:1px solid var(--line); border-radius:3px; padding:18px; background:var(--bg-2)}
+  .bank h4{font-family:var(--disp); font-size:17px; font-weight:700; display:flex; justify-content:space-between; align-items:center}
+  .bank .gauge{font-family:var(--mono); font-size:11px; color:var(--gold-dim); border:1px solid var(--line-2); padding:3px 8px; border-radius:2px}
+  .bank .react{margin-top:12px; font-size:14px; color:var(--muted); transition:.25s}
+  .bank .react b{color:var(--txt); font-weight:600}
+  .net{margin-top:20px; text-align:center; font-family:var(--mono); font-size:14px; padding:16px; border:1px dashed var(--gold-dim); border-radius:3px; color:var(--gold); letter-spacing:.03em}
+  .net b{color:var(--txt)}
+
+  /* ---------- footer ---------- */
+  footer{padding:50px 0 80px; color:var(--muted); font-size:13px}
+  footer a{color:var(--gold); text-decoration:none; border-bottom:1px solid var(--gold-dim)}
+  .repo-row{display:flex; gap:24px; flex-wrap:wrap; margin-top:18px; font-family:var(--mono); font-size:12px}
+  code{font-family:var(--mono); font-size:12px; background:var(--bg-2); border:1px solid var(--line); padding:2px 7px; border-radius:3px; color:var(--gold)}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="eyebrow">Claude Agent Skill · Macro-Driven FX</div>
+    <h1>Macro FX<br><span class="g">Pipeline.</span></h1>
+    <p class="lede">An institutional analysis framework in <b>three sequential levels</b>. No level concludes alone — each one confirms, contradicts, or reframes the previous. Built to answer the question retail analysis skips: not <b>what</b> the trade is, but <b>how</b> the macro transmits into price and <b>what specifically</b> breaks the thesis.</p>
+  </div>
+</header>
+
+<!-- PIPELINE -->
+<section>
+  <div class="wrap">
+    <div class="sec-head"><span class="sec-num">01</span><span class="sec-title">The three levels</span></div>
+    <p class="sec-sub">Click any level to expand its steps. Sequence is fixed: Level 1 sets the structural thesis; Levels 2 and 3 modify timing and risk — they never replace it.</p>
+
+    <div class="pipe">
+      <div class="lvl" data-lvl="1">
+        <div class="lvl-tag">Level 1 · weeks–months</div>
+        <div class="lvl-name">Macro Reality</div>
+        <div class="lvl-horizon">The structural driver</div>
+        <div class="steps">
+          <div class="step"><span class="n">1</span><span class="t">Business cycle phase<span>PMI (mfg vs services separately), GDP, unemployment trajectory</span></span></div>
+          <div class="step"><span class="n">2</span><span class="t">CB dominant pain + mandate gauge<span>Fed → core PCE · ECB → headline HICP. Same shock, different reaction.</span></span></div>
+          <div class="step"><span class="n">3</span><span class="t">Yield spread<span>10Y base − 10Y counter. Watch the trend, not the level.</span></span></div>
+          <div class="step"><span class="n">4</span><span class="t">OIS / forward pricing<span>6–12m trajectory, not just the next meeting</span></span></div>
+          <div class="step"><span class="n">5</span><span class="t">Latest data<span>Does it move policy, or already priced? Headline vs core.</span></span></div>
+        </div>
+        <div class="lvl-out"><b>OUTPUT →</b> direction + the channel it transmits through</div>
+        <div class="hint">↳ click to expand</div>
+      </div>
+
+      <div class="lvl" data-lvl="2">
+        <div class="lvl-tag">Level 2 · positioning</div>
+        <div class="lvl-name">Smart Money</div>
+        <div class="lvl-horizon">COT — TFF report only</div>
+        <div class="steps">
+          <div class="step"><span class="n">1</span><span class="t">Leveraged Funds — direction<span>The primary signal. Read first.</span></span></div>
+          <div class="step"><span class="n">2</span><span class="t">LF conviction<span>Weekly Δ + COT Index. &gt;90 or &lt;10 = crowded (a risk flag, not a reversal).</span></span></div>
+          <div class="step"><span class="n">3</span><span class="t">Asset Managers<span>Direction over 3–4 weeks. Slow, but confirms structural shifts.</span></span></div>
+          <div class="step"><span class="n">4</span><span class="t">Open Interest<span>Rising = new conviction. Falling on a sharp move = washout.</span></span></div>
+          <div class="step"><span class="n">5</span><span class="t">Cross-check vs Level 1<span>Confirms, contradicts, or leads the macro thesis?</span></span></div>
+        </div>
+        <div class="lvl-out"><b>OUTPUT →</b> confirms / contradicts / leads + crowding flag</div>
+        <div class="hint">↳ click to expand</div>
+      </div>
+
+      <div class="lvl" data-lvl="3">
+        <div class="lvl-tag">Level 3 · timing</div>
+        <div class="lvl-name">Trap & Liquidity</div>
+        <div class="lvl-horizon">Where the crowd is wrong</div>
+        <div class="steps">
+          <div class="step"><span class="n">1</span><span class="t">Obvious retail conclusion<span>Did the "obvious" scenario play out, or sell-the-news?</span></span></div>
+          <div class="step"><span class="n">2</span><span class="t">Retail sentiment skew<span>&gt;60/40 is contrarian. Neutral = no signal; don't force one.</span></span></div>
+          <div class="step"><span class="n">3</span><span class="t">Technical levels & liquidity<span>Where do swing points sit vs price? One side or both?</span></span></div>
+          <div class="step"><span class="n">4</span><span class="t">Binary catalysts<span>CB meetings, data, geopolitics — with dates.</span></span></div>
+        </div>
+        <div class="lvl-out"><b>OUTPUT →</b> liquidity aligns or opposes + dated triggers</div>
+        <div class="hint">↳ click to expand</div>
+      </div>
+    </div>
+
+    <div class="flow">
+      <span>direction + channel</span><span class="arrow">→</span>
+      <span>confirms / contradicts / leads</span><span class="arrow">→</span>
+      <span class="arrow">SYNTHESIS</span>
+    </div>
+  </div>
+</section>
+
+<!-- DECISION TREE -->
+<section>
+  <div class="wrap">
+    <div class="sec-head"><span class="sec-num">02</span><span class="sec-title">How positioning bends the thesis</span></div>
+    <p class="sec-sub">The value isn't in the boxes — it's in what Level 2 does to Level 1. Walk the branch.</p>
+
+    <div class="tree">
+      <div class="node start">▸ Level 1 has set a direction + channel</div>
+      <div class="q">Level 2 — is COT at an extreme? (Index &gt;90 or &lt;10)</div>
+      <div class="branches">
+        <div class="branch" data-out="neutral">
+          <div class="lab">NEUTRAL · 40–60</div>
+          <div class="desc">No positioning signal either way.</div>
+        </div>
+        <div class="branch" data-out="crowd-cat">
+          <div class="lab">CROWDED + catalyst the other way</div>
+          <div class="desc">Extreme skew, and a near-term binary favors the opposite side.</div>
+        </div>
+        <div class="branch" data-out="crowd-nocat">
+          <div class="lab">CROWDED · no catalyst</div>
+          <div class="desc">Extreme skew, but nothing to trigger it yet.</div>
+        </div>
+      </div>
+      <div class="outcome" id="outcome">
+        <div class="o-tag">Outcome</div>
+        <div class="o-txt" id="o-txt"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- MANDATE ASYMMETRY -->
+<section>
+  <div class="wrap">
+    <div class="sec-head"><span class="sec-num">03</span><span class="sec-title">The mandate-gauge asymmetry</span></div>
+    <p class="sec-sub">The idea that separates this from "ECB dovish, Fed hawkish → short EUR". The same shock transmits differently because each bank targets a different inflation gauge. Toggle the shock.</p>
+
+    <div class="asym">
+      <div class="toggle">
+        <button id="spike" class="on">OIL SPIKE</button>
+        <button id="collapse">OIL COLLAPSE / CEASEFIRE</button>
+      </div>
+      <div class="banks">
+        <div class="bank">
+          <h4>Fed <span class="gauge">targets core PCE</span></h4>
+          <div class="react" id="fed">Core strips energy → oil barely moves the reaction function → <b>stays on hold</b>.</div>
+        </div>
+        <div class="bank">
+          <h4>ECB <span class="gauge">targets headline HICP</span></h4>
+          <div class="react" id="ecb">Headline includes energy → oil feeds straight in → <b>forced to hike into weak growth</b>.</div>
+        </div>
+      </div>
+      <div class="net" id="net">NET → divergence <b>NARROWS</b> as the ECB catches up hawkishly</div>
+    </div>
+    <p class="sec-sub" style="margin-top:22px">Counterintuitive payoff: a structural <b style="color:var(--gold)">USD-bullish / EUR-bearish</b> thesis can be <i>stronger in the oil-collapse case</i> than in the spike — purely from which gauge each bank is bound to.</p>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    Three sequential levels → a thesis, a <b style="color:var(--txt)">structural invalidation</b> (a data event, never a price level), and a tactical note on near-term squeezes.
+    <div class="repo-row">
+      <span>INSTALL → <code>git clone</code> into your Claude skills directory</span>
+      <span><a href="https://github.com/USERNAME/macro-fx-pipeline">View on GitHub →</a></span>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // expand levels
+  document.querySelectorAll('.lvl').forEach(function(el){
+    el.addEventListener('click', function(){ el.classList.toggle('open'); });
+  });
+
+  // decision branches
+  var outcomes = {
+    'neutral': ['No positioning signal','Trade the Level 1 thesis on its own timing. COT adds nothing here — don\'t invent a contrarian read from a mid-range Index.'],
+    'crowd-cat': ['Expect a squeeze','A catalyst favoring the other side squeezes exactly the crowded book. Often a <b>better entry after</b> the squeeze — especially when the squeeze is the very mechanism Level 1 predicted (e.g. one CB easing post-shock, widening divergence).'],
+    'crowd-nocat': ['Wait for a trigger','Crowded can stay crowded for months. The extreme is a <b>risk flag, not a timing signal</b>. Hold the structural bias; size for the counter-move risk.']
+  };
+  var oc = document.getElementById('outcome'), ot = document.getElementById('o-txt');
+  document.querySelectorAll('.branch').forEach(function(b){
+    b.addEventListener('click', function(){
+      document.querySelectorAll('.branch').forEach(function(x){x.classList.remove('active')});
+      b.classList.add('active');
+      var d = outcomes[b.dataset.out];
+      oc.querySelector('.o-tag').textContent = d[0];
+      ot.innerHTML = d[1];
+      oc.classList.add('show');
+    });
+  });
+
+  // mandate toggle
+  var spikeBtn = document.getElementById('spike'), colBtn = document.getElementById('collapse');
+  var fed = document.getElementById('fed'), ecb = document.getElementById('ecb'), net = document.getElementById('net');
+  var data = {
+    spike: {
+      fed:'Core strips energy → oil barely moves the reaction function → <b>stays on hold</b>.',
+      ecb:'Headline includes energy → oil feeds straight in → <b>forced to hike into weak growth</b> (stagflation trap).',
+      net:'NET → divergence <b>NARROWS</b> as the ECB catches up hawkishly'
+    },
+    collapse: {
+      fed:'Core unchanged → nothing forces a move → <b>holds</b>.',
+      ecb:'Headline falls fast → the hawkish rationale evaporates → pivots to weak-growth reality → <b>eases</b>.',
+      net:'NET → divergence <b>WIDENS</b> in favor of USD'
+    }
+  };
+  function set(mode){
+    fed.innerHTML = data[mode].fed; ecb.innerHTML = data[mode].ecb; net.innerHTML = data[mode].net;
+    spikeBtn.classList.toggle('on', mode==='spike');
+    colBtn.classList.toggle('on', mode==='collapse');
+  }
+  spikeBtn.addEventListener('click', function(){set('spike')});
+  colBtn.addEventListener('click', function(){set('collapse')});
+</script>
+</body>
+</html>
